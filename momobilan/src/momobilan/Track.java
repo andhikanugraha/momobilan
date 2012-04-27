@@ -30,7 +30,7 @@ public class Track {
         this.laneCount = laneCount;
         this.trackLength = trackLength;
 
-        Track();
+        matrix = new Vehicle[trackLength][laneCount];
     }
     
     /**
