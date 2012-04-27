@@ -93,4 +93,16 @@ public class Track {
     public Vehicle[][] getMatrix() {
         return matrix;
     }
+    
+    /**
+     * Mengembalikan mobil yang berada pada lane dan distance tertentu,
+     * atau null jika tidak ada
+     * 
+     * @param lane
+     * @param distance
+     * @return 
+     */
+    public Vehicle getVehicle(int lane, int distance) {
+        return matrix[distance][lane];
+    }
 }
