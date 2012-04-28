@@ -2,7 +2,10 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package momobilan;
+package momobilan.events;
+
+import momobilan.Track;
+import momobilan.Vehicle;
 
 /**
  *
@@ -28,6 +31,13 @@ public class TrackEvent {
         this.oldDistance = oldDistance;
         this.newLane = newLane;
         this.newDistance = newDistance;
+    }
+    
+    public TrackEvent(Track track, Vehicle vehicle, int lane, int distance) {
+        this.track = track;
+        this.vehicle = vehicle;
+        oldLane = newLane = lane;
+        newLane = newDistance = distance;
     }
     
     public Track getTrack() {

@@ -4,6 +4,10 @@
  */
 package momobilan;
 
+import momobilan.events.TrackListener;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import momobilan.events.ListenerCollection;
+
 /**
  *
  * @author Andhika
@@ -12,7 +16,7 @@ public class Track {
     Vehicle[][] matrix;    
     int laneCount = 5;
     int trackLength = 20;
-
+    
     /**
      * Konstruktor utama
      */
@@ -42,7 +46,8 @@ public class Track {
      *      Jika newLane dan newDistance melebihi boundary atas-bawah track,
      *        panggil V.hasTrespassed().
      *      Else, V dipindahkan ke newLane dan newDistance,
-     *        panggil V.hasMoved()
+     *        panggil V.hasMoved().
+     *      Sesuai dengan event yang terjadi, panggil juga listener track.
      * 
      * @param currentLane lajur mula-mula benda
      * @param currentDistance jarak mula-mula benda
@@ -54,12 +59,14 @@ public class Track {
         Vehicle V = matrix[currentDistance][currentLane];
         
         if (newDistance < 0 || newDistance >= trackLength) {
+            V.die();
             V.hasTrespassed();
         }
         else {
             Vehicle W = matrix[newDistance][newLane];
 
             if (newLane < 0 || newLane >= laneCount || W != null) {
+                V.die();
                 // Menabrak tembok atau mobil lain
                 V.hasCrashed();
                 W.hasCrashed();

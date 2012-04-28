@@ -5,7 +5,9 @@
 package momobilan;
 
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import momobilan.events.ListenerCollection;
+import momobilan.events.TrackEvent;
+import momobilan.events.TrackListener;
 
 /**
  * Vehicle
@@ -34,7 +36,7 @@ public class Vehicle extends Thread {
     
     private float acceleration = 0;
     
-    protected ConcurrentLinkedQueue<TrackListener> listeners;
+    protected ListenerCollection listeners;
     
     private HashMap<String,Object> attributes;
 
@@ -201,55 +203,46 @@ public class Vehicle extends Thread {
         // Tidak terjadi tabrakan.
         
         // panggil event onCrash di sini
-        for (TrackListener listener : listeners) {
-            listener.onMove(new TrackEvent(parentTrack, this, currentLane,
-                    currentDistance, newLane, newDistance));
-        }
+        listeners.fireEvent("move", new TrackEvent(parentTrack, this, 
+                currentLane, currentDistance, newLane, newDistance));
     }
     
     /**
      * Menghilangkan keberadaan dan pergerakan mobil.
+     * 
+     * Juga memberhentikan thread.
      */
     public void die() {
         isActive = false;
-        
-        for (TrackListener listener : listeners) {
-            listener.onDie(new TrackEvent(parentTrack, this, currentLane,
-                    currentDistance, newLane, newDistance));
-        }
     }
     
     /**
      * Dipanggil apabila terjadi tabrakan.
+     * 
+     * I.S. Thread mati
      * 
      * Tabrakan adalah kejadian di mana mobil berpindah ke lokasi:
      * a. dinding
      * b. sebuah mobil lainnya
      */
     public void hasCrashed() {
-        // Terjadi tabrakan.
-        die();
-        
-        // panggil event onCrash di sini
-        for (TrackListener listener : listeners) {
-            listener.onCrash(new TrackEvent(parentTrack, this, currentLane,
-                    currentDistance, newLane, newDistance));
-        }
+        // panggil event crash di sini
+        listeners.fireEvent("crash", new TrackEvent(parentTrack, this,
+                currentLane, currentDistance, newLane, newDistance));
     }
     
     /**
      * Dipanggil apabila mobil melewati batas trek.
      * 
+     * I.S. Thread mati
+     * F.S. Sembarang
+     * 
      * Batas trek di sini berarti batas atas/bawah, atau panjang lintasan trek.
      */
     public void hasTrespassed() {
-        // Menghilang saja
-        die();
-        
         // panggil event onTrespass di sini
-        for (TrackListener listener : listeners) {
-            listener.onTrespass(new TrackEvent(parentTrack, this, currentLane, currentDistance, newLane, newDistance));
-        }
+        listeners.fireEvent("crash", new TrackEvent(parentTrack, this,
+                currentLane, currentDistance, newLane, newDistance));
     }
     
     /**
