@@ -8,8 +8,12 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- *
- * @author Andhika
+ * Vehicle
+ * 
+ * Representasi sebuah mobil yang berjalan pada track.
+ * Diimplementasikan sebagai thread untuk eksekusi konkuren.
+ * 
+ * @author Andhika Nugraha andhika.nugraha@gmail.com
  */
 public class Vehicle extends Thread {
     public int currentLane;
@@ -32,10 +36,14 @@ public class Vehicle extends Thread {
     
     private ConcurrentLinkedQueue<TrackListener> listeners;
     
-    private HashMap<String,String> attributes;
+    private HashMap<String,Object> attributes;
 
     /**
-     * Menghubungkan mobil dengan dunia trek
+     * Menghubungkan mobil dengan dunia trek.
+     * 
+     * I.S. Track terdefinisi, lane dan distance valid (tidak out-of-bounds)
+     * F.S. properti parentTrack, currentLane, currentDistance terisi.
+     *      Eksekusi Thread dijalankan.
      * 
      * @param track
      * @param lane
@@ -50,7 +58,7 @@ public class Vehicle extends Thread {
     }
     
     /**
-     * Pergerakan default
+     * Pergerakan default.
      * 
      * Tanpa intervensi dari luar, mobil akan bergerak sesuai dengan
      * properti velocity dan interval.
@@ -59,39 +67,64 @@ public class Vehicle extends Thread {
         // Lakukan sebuah pergerakan
         sleep(interval);
 
-        newDistance = currentDistance + velocity;
+        move(0, velocity);
+                
         velocity += acceleration * velocity;
-        
-        updateTrack();
     }
     
     /**
-     * Berpindah posisi
+     * Berpindah posisi.
      * 
      * @param deltaLane
      * @param deltaDistance 
      */
     public void move(int deltaLane, int deltaDistance) {
-        newLane = currentLane + deltaLane;
-        newDistance = currentDistance + deltaDistance;
-        
-        updateTrack();
+        if (isActive && deltaLane != 0 && deltaDistance != 0) {
+            newLane = currentLane + deltaLane;
+            newDistance = currentDistance + deltaDistance;
+
+            updateTrack();
+        }
     }
     
     /**
      * Berpindah lajur.
-     * Note: Pemanggilan event hasil pemindahan lajur
-     *       hanya akan dipanggil dalam iterasi run().
+     * 
      * @param deltaLane 
      */
     public void changeLane(int deltaLane) {
-        newLane = currentLane + deltaLane;
-        
-        updateTrack();
+        move(deltaLane, 0);
     }
     
     /**
-     * Mengubah kecepatan mobil berdasarkan perpindahan per selang waktu
+     * Mengembalikan nilai perpindahan mobil per interval.
+     * 
+     * @return velocity
+     */
+    public int getVelocity() {
+        return velocity;
+    }
+    
+    /**
+     * Mengembalikan nilai interval.
+     * 
+     * @return interval
+     */
+    public int getInterval() {
+        return interval;
+    }
+    
+    /**
+     * Mengembalikan nilai percepatan.
+     * 
+     * @return 
+     */
+    public float getAcceleration() {
+        return acceleration;
+    }
+    
+    /**
+     * Mengubah kecepatan mobil berdasarkan perpindahan per selang waktu.
      * 
      * @param velocity 
      */
@@ -100,7 +133,7 @@ public class Vehicle extends Thread {
     }
     
     /**
-     * Mengubah kecepatan mobil berdasarkan selang waktu per perpindahan
+     * Mengubah kecepatan mobil berdasarkan selang waktu per perpindahan.
      * 
      * @param interval 
      */
@@ -109,7 +142,7 @@ public class Vehicle extends Thread {
     }
     
     /**
-     * Mengubah kecepatan mobil berdasarkan perpindahan dan selang waktu
+     * Mengubah kecepatan mobil berdasarkan perpindahan dan selang waktu.
      * 
      * @param velocity
      * @param interval 
@@ -120,7 +153,16 @@ public class Vehicle extends Thread {
     }
     
     /**
-     * Memperbarui kondisi track di mana mobil berada
+     * Mengubah percepatan mobil.
+     * 
+     * @param acceleration percepatan mobil yang baru.
+     */
+    public void setAcceleration(float acceleration) {
+        this.acceleration = acceleration;
+    }
+    
+    /**
+     * Memperbarui status track di mana mobil berada.
      * 
      * I.S. parentTrack terdefinisi
      * F.S. Terdaftar perpindahan pada parentTrack, serta event dipanggil.
@@ -141,12 +183,14 @@ public class Vehicle extends Thread {
     public void run() {
         try {
             while (isActive) {
-                // do stuff
+                // Lakukan pergerakan default.
+                // Pergerakan lainnya semestinya dilakukan dengan method lain
+                // dan dari thread lain.
                 defaultMotion();
             }
         }
         catch (InterruptedException e) {
-            // Interrupted. May be because of various reasons.
+            // Interrupted. Tidak perlu dihiraukan.
         }
     }
     
@@ -158,7 +202,8 @@ public class Vehicle extends Thread {
         
         // panggil event onCrash di sini
         for (TrackListener listener : listeners) {
-            listener.onMove(new TrackEvent(parentTrack, this, currentLane, currentDistance, newLane, newDistance));
+            listener.onMove(new TrackEvent(parentTrack, this, currentLane,
+                    currentDistance, newLane, newDistance));
         }
     }
     
@@ -169,27 +214,69 @@ public class Vehicle extends Thread {
         isActive = false;
         
         for (TrackListener listener : listeners) {
-            listener.onDie(new TrackEvent(parentTrack, this, currentLane, currentDistance, newLane, newDistance));
+            listener.onDie(new TrackEvent(parentTrack, this, currentLane,
+                    currentDistance, newLane, newDistance));
         }
     }
     
+    /**
+     * Dipanggil apabila terjadi tabrakan.
+     * 
+     * Tabrakan adalah kejadian di mana mobil berpindah ke lokasi:
+     * a. dinding
+     * b. sebuah mobil lainnya
+     */
     public void hasCrashed() {
         // Terjadi tabrakan.
         die();
         
         // panggil event onCrash di sini
         for (TrackListener listener : listeners) {
-            listener.onCrash(new TrackEvent(parentTrack, this, currentLane, currentDistance, newLane, newDistance));
+            listener.onCrash(new TrackEvent(parentTrack, this, currentLane,
+                    currentDistance, newLane, newDistance));
         }
     }
     
+    /**
+     * Dipanggil apabila mobil melewati batas trek.
+     * 
+     * Batas trek di sini berarti batas atas/bawah, atau panjang lintasan trek.
+     */
     public void hasTrespassed() {
         // Menghilang saja
         die();
         
-        // panggil event onDisappear di sini
+        // panggil event onTrespass di sini
         for (TrackListener listener : listeners) {
             listener.onTrespass(new TrackEvent(parentTrack, this, currentLane, currentDistance, newLane, newDistance));
         }
+    }
+    
+    /**
+     * Membaca nilai sebuah atribut.
+     * 
+     * Sebuah atribut dapat mewakili sifat auksilier mobil,
+     * seperti warna, bentuk, dll. Dengan kata lain, atribut adalah
+     * sifat mobil yang tidak menentukan pergerakannya.
+     * 
+     * @param key kunci atribut yang dicari.
+     * @return nilai atribut tersebut
+     */
+    public Object getAttribute(String key) {
+        return attributes.get(key);
+    }
+    
+    /**
+     * Mengubah nilai sebuah atribut.
+     * 
+     * Sebuah atribut dapat mewakili sifat auksilier mobil,
+     * seperti warna, bentuk, dll. Dengan kata lain, atribut adalah
+     * sifat mobil yang tidak menentukan pergerakannya.
+     * 
+     * @param key kunci atribut yang ingin diubah
+     * @param value nilai atribut yang baru
+     */
+    public void setAttribute(String key, Object value) {
+        attributes.put(key, value);
     }
 }
