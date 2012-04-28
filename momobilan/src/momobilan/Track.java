@@ -6,7 +6,9 @@ package momobilan;
 
 import momobilan.events.TrackListener;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import momobilan.events.CrashEvent;
 import momobilan.events.ListenerCollection;
+import momobilan.events.TrackEvent;
 
 /**
  *
@@ -16,6 +18,8 @@ public class Track {
     Vehicle[][] matrix;    
     int laneCount = 5;
     int trackLength = 20;
+    
+    protected ListenerCollection listeners;
     
     /**
      * Konstruktor utama
@@ -58,22 +62,30 @@ public class Track {
             int newLane, int newDistance) {
         Vehicle V = matrix[currentDistance][currentLane];
         
+        TrackEvent event = new TrackEvent(this, V, currentLane, currentDistance,
+                newLane, newDistance);
+        
         if (newDistance < 0 || newDistance >= trackLength) {
             V.die();
             V.hasTrespassed();
+            listeners.fireEvent("trespass", event);
         }
         else {
             Vehicle W = matrix[newDistance][newLane];
+            CrashEvent crashEvent =
+                    new CrashEvent(this, V, W, newLane, newDistance);
 
             if (newLane < 0 || newLane >= laneCount || W != null) {
                 V.die();
                 // Menabrak tembok atau mobil lain
+                listeners.fireEvent("crash", event);
                 V.hasCrashed();
                 W.hasCrashed();
             }
             else { // W == null
                 matrix[newDistance][newLane] = V;
                 matrix[currentDistance][currentLane] = null;
+                listeners.fireEvent("move", event);
                 V.hasMoved();
             }
         }
@@ -90,6 +102,7 @@ public class Track {
         matrix[distance][lane] = vehicle;
         
         vehicle.attach(this, lane, distance); // this starts the thread.
+        listeners.fireEvent("spawn", new TrackEvent(this, vehicle, lane, distance));
     }
     
     /**

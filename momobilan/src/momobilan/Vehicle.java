@@ -4,10 +4,8 @@
  */
 package momobilan;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import momobilan.events.ListenerCollection;
-import momobilan.events.TrackEvent;
-import momobilan.events.TrackListener;
 
 /**
  * Vehicle
@@ -38,7 +36,7 @@ public class Vehicle extends Thread {
     
     protected ListenerCollection listeners;
     
-    private HashMap<String,Object> attributes;
+    private ConcurrentHashMap<String,Object> attributes;
 
     /**
      * Menghubungkan mobil dengan dunia trek.
@@ -201,10 +199,6 @@ public class Vehicle extends Thread {
      */
     public void hasMoved() {
         // Tidak terjadi tabrakan.
-        
-        // panggil event onCrash di sini
-        listeners.fireEvent("move", new TrackEvent(parentTrack, this, 
-                currentLane, currentDistance, newLane, newDistance));
     }
     
     /**
@@ -227,8 +221,6 @@ public class Vehicle extends Thread {
      */
     public void hasCrashed() {
         // panggil event crash di sini
-        listeners.fireEvent("crash", new TrackEvent(parentTrack, this,
-                currentLane, currentDistance, newLane, newDistance));
     }
     
     /**
@@ -241,8 +233,6 @@ public class Vehicle extends Thread {
      */
     public void hasTrespassed() {
         // panggil event onTrespass di sini
-        listeners.fireEvent("crash", new TrackEvent(parentTrack, this,
-                currentLane, currentDistance, newLane, newDistance));
     }
     
     /**
