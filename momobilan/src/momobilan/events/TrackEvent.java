@@ -19,6 +19,10 @@ public class TrackEvent {
     private int newLane;
     private int newDistance;
 
+    public TrackEvent() {
+        
+    }
+    
     public TrackEvent(Track track, Vehicle vehicle) {
         this.track = track;
         this.vehicle = vehicle;
