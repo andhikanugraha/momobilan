@@ -34,7 +34,7 @@ public class Vehicle extends Thread {
     
     private float acceleration = 0;
     
-    private ConcurrentLinkedQueue<TrackListener> listeners;
+    protected ConcurrentLinkedQueue<TrackListener> listeners;
     
     private HashMap<String,Object> attributes;
 
